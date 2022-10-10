@@ -3,6 +3,7 @@ import pkg_resources
 import sys
 from random import randint
 
+# ensure that the required packages are installed and install otherwise.
 required = {'pygame', 'numpy'}
 installed = {pkg.key for pkg in pkg_resources.working_set}
 missing = required - installed
@@ -16,7 +17,6 @@ import pygame
 POPULATION = 100
 MUTATION_PROB = 10
 CROSSOVER_PROB = 10
-
 
 class Gui:
     # This class handles the gui aspects of this program.
@@ -42,48 +42,52 @@ class Gui:
         # for the three points from which we will draw a line between them, in order to create an inequality sign.
         x1, y1 = first
         x2, y2 = second
-        c = 5
-        push = 50  # used to push everything we draw a bit downwards in the gui, to make space for the text
-        if x1 == x2 and y1 == y2:  # check if the two coords are identical, in case the input file had a mistake in it.
+
+        if x1 == x2 and y1 == y2:  # if the two coords are identical, the input file has a mistake in it.
             return
         if x1 == x2:
             if y2 > y1:
-                # inequality facing right side
-                p1 = (self.start_coord + y1*self.block_size*1.5 - 0.5*self.block_size + c,
-                      self.start_coord + (x1-1)*self.block_size*1.5 + c + push)
-                p2 = (self.start_coord + y1*self.block_size*1.5 - c,
-                      self.start_coord + 1.5*x1*self.block_size - self.block_size + push)
-                p3 = (self.start_coord + y1*self.block_size*1.5 - 0.5*self.block_size + c,
-                      self.start_coord + 1.5*x1*self.block_size - 0.5*self.block_size - c + push)
+                p1, p2, p3 = self.calculate_points(x1, y1, True, 2)  # 2 indicates inequality facing right side, y2>y1
             elif y1 > y2:
-                # inequality facing left side
-                p1 = (self.start_coord + y2*self.block_size*1.5 - c,
-                      self.start_coord + (x1-1)*self.block_size*1.5 + c + push)
-                p2 = (self.start_coord + y2*self.block_size*1.5 - 0.5*self.block_size + c,
-                      self.start_coord + x1*self.block_size*1.5 - self.block_size + push)
-                p3 = (self.start_coord + y2*self.block_size*1.5 - c,
-                      self.start_coord + x1*self.block_size*1.5 - 0.5*self.block_size - c + push)
+                p1, p2, p3 = self.calculate_points(x1, y2,True, 1)  # 1 indicates inequality facing left side, y1>y2
+
         else:
             if x2 > x1:
-                # inequality facing down
-                p1 = (self.start_coord + (y1-1)*self.block_size*1.5 + c,
-                      self.start_coord + x1*self.block_size*1.5 - 0.5*self.block_size + c + push)
-                p2 = (self.start_coord + y1*self.block_size*1.5 - self.block_size,
-                      self.start_coord + x1*self.block_size*1.5 - c + push)
-                p3 = (self.start_coord + y1*self.block_size*1.5 - 0.5*self.block_size - c,
-                      self.start_coord + x1*self.block_size*1.5 - 0.5*self.block_size + c + push)
+                p1, p2, p3 = self.calculate_points(x1, y1, False, 2)  # 2 indicates inequality facing down, x2>x1
+
             elif x1 > x2:
-                # inequality facing up
-                p1 = (self.start_coord + 1.5*(y1-1)*self.block_size + c,
-                      self.start_coord + x2*self.block_size*1.5 - c + push)
-                p2 = (self.start_coord + 1.5*y1*self.block_size - self.block_size,
-                      self.start_coord + x2*self.block_size*1.5 - 0.5*self.block_size + c + push)
-                p3 = (self.start_coord + 1.5*y1*self.block_size - 0.5*self.block_size - c,
-                      self.start_coord + x2*self.block_size*1.5 - c + push)
+                p1, p2, p3 = self.calculate_points(x2, y1, False, 1)  # 1 indicates inequality facing up, x1>x2
 
         # draws the lines from p1 to p2 and from p3 to p2, creating the inequality signs.
         pygame.draw.line(self.board, (0, 0, 0,), p1, p2, 2)
         pygame.draw.line(self.board, (0, 0, 0,), p3, p2, 2)
+
+    def calculate_points(self, x, y, arex1x2equal, biggerid):
+        c = 5
+        push = 50  # used to push everything we draw a bit downwards in the gui, to make space for the text
+        halfblock = 0.5 * self.block_size
+        oneandhalfblock = 1.5 * self.block_size
+        addition1, addition2, addition3  = - c, -c, -c
+        if biggerid == 2:
+            addition1, addition3 = c - halfblock, c - halfblock
+        else:
+            addition2 = c - 0.5 * self.block_size
+        if arex1x2equal:
+            p1 = (self.start_coord + y * oneandhalfblock + addition1,
+                self.start_coord + (x - 1) * oneandhalfblock + c + push)
+            p2 = (self.start_coord + y * oneandhalfblock + addition2,
+                self.start_coord + x * oneandhalfblock - self.block_size + push)
+            p3 = (self.start_coord + y * oneandhalfblock + addition3,
+                self.start_coord + x * oneandhalfblock - halfblock - c + push)
+        else:
+            p1 = (self.start_coord + (y - 1) * oneandhalfblock + c,
+                  self.start_coord + x * oneandhalfblock + addition1 + push)
+            p2 = (self.start_coord + y * oneandhalfblock - self.block_size,
+                  self.start_coord + x * oneandhalfblock + addition2 + push)
+            p3 = (self.start_coord + y * oneandhalfblock - halfblock - c,
+                  self.start_coord + x * oneandhalfblock + addition3 + push)
+
+        return p1, p2, p3
 
     def write_text(self, text, x, y):
         # writes the text in the given x and y coordinates.
@@ -103,10 +107,9 @@ class Gui:
                     self.pause = True
                     self.gui_paused()
 
-
         solution = solution.astype(int)
         self.board.fill(self.background_color)
-        # write the text at the top of the gui
+        # writes the text at the top of the gui
         self.write_text(f"Generation: {generation}", self.width/2, 20)
         self.write_text(f"Best fitness: {best_fit}", self.width/2, 45)
         self.write_text(f"Average fitness: {avg_fit}", self.width/2, 70)
@@ -114,7 +117,7 @@ class Gui:
         # draw the constraints
         for constraint in constraints:
             self.draw_constraint(constraint[0], constraint[1])
-        # draw the squares and the number in them
+        # draw the squares and the numbers in them
         for i in range(self.size):
             for j in range(self.size):
                 x = self.start_coord + i*1.5*self.block_size
@@ -139,15 +142,13 @@ class Gui:
 
 
 def get_input(path):
-    # this function extracts the information from the input file
     with open(path, 'r') as f:
-        # reading all lines and stripping them into a list of strings
+        # reading all lines from input file and stripping them into a list of strings
         lines = [line.rstrip() for line in f.readlines()]
         # extracting the size of the matrix and initializing it
         size = int(lines[0])
         matrix = np.empty((size, size))
         matrix[:] = np.nan
-        # matrix = np.array([0] * size * size).reshape(size, size)
         # extracting the amount of numbers given and assigning them in the matrix
         nums_given = int(lines[1])
         indexes_of_num_given = []
@@ -165,8 +166,7 @@ def get_input(path):
 
 def gen_random_solution(size, matrix, indexes):
     # creates an empty solution, and assigns a random number from 1 to the given size in each cell, except those with
-    # given numbers in the input file. the function fills the matrix in a way so that there will be unique elements in
-    # each row
+    # given numbers in the input file. the function fills the matrix so that each row  will contain unique elements
     sol = np.copy(matrix)
     for i in range(size):
         for j in range(size):
@@ -180,15 +180,13 @@ def gen_random_solution(size, matrix, indexes):
 
 
 def get_random_element(lst):
-    # returns a random element in a list by drawing a random index from 0 to the list's size, and returning
-    # the element in that index
+    # returns a random element in a list by drawing a random index from 0 to the list's size
     index = randint(0, len(lst)-1)
     return lst[index]
 
 
 def is_constraint_maintained(constraint, sol):
-    # this function checks if the constraints - the inequality signs - are met. if yes, it returns true. otherwise,
-    # returns false
+    # checks if the constraints - the inequality signs - are met. if yes, it returns true. otherwise, false
     x1, y1 = constraint[0]
     x2, y2 = constraint[1]
     if sol[x1 - 1][y1 - 1] > sol[x2 - 1][y2 - 1]:
@@ -210,7 +208,7 @@ class GeneticAlg:
         self.mutation_prob = 10
 
     def first_gen(self):
-        # this function generates random solutions in the size of POPULATION for the first gen
+        # generates random solutions in the size of POPULATION for the first gen
         gen = []
         for i in range(POPULATION):
             gen.append(gen_random_solution(self.size, self.matrix, self.indexes))
@@ -218,7 +216,6 @@ class GeneticAlg:
 
     def calc_score(self, sol):
         score = 0
-
         # check if there's one appearance of every digit
         for i in range(1, self.size+1):
             # the next two lines count how many appearances of the digit i there are in each row and column
@@ -237,7 +234,7 @@ class GeneticAlg:
             else:
                 score -= 400 * (self.size - np.amax(np.count_nonzero(sol == i, axis=0)))
 
-        # here we check if the digits near the "greater than" signs maintain it, and adjust the score accordingly.
+        # check if the digits near the "greater than" signs maintain it, and adjust the score accordingly.
         for constraint in self.constraints:
             if is_constraint_maintained(constraint, sol):
                 score += 800
@@ -314,7 +311,7 @@ class GeneticAlg:
         # variables from the sorted zipped variable.
         self.sols_fit, self.gen = (list(t) for t in zip(*sorted(list(zip(self.sols_fit, self.gen)),
                                                                 key=lambda x: x[0], reverse=True)))
-        # now we return the best 20% solutions
+        # return the best 20% solutions
         return self.gen[0:amount]
 
     def new_generation(self):
@@ -334,22 +331,17 @@ class GeneticAlg:
 
     def solve(self):
         generation = 1
-        # best_fit = []
-        # avg_fit = []
-        # worst_fit = []
         while generation < 501:
             # calculate the fitness for all solutions
             self.sols_fit = self.fitness()
-            # best_fit.append(self.best_fit)
-            # avg_fit.append(self.avg_fit)
-            # worst_fit.append(self.worst_fit)
+
             # display the best solution in the current gen, with information about best, avg and worst fitness values.
             self.gui.show_solution(self.gen[self.index_best_sol], self.constraints, generation,
                                    self.best_fit, self.avg_fit, self.worst_fit)
             # create the next generation
             self.gen = self.new_generation()
 
-            # we want to change the mutation according to the generation to make spread "wave" effect, where in those
+            # we want to change mutation according to the generation to make spread "wave" effect, where in those
             # waves there will be spread higher possibility for mutations. that's why, for every 100 generations, the
             # first 20 will have spread higher change for mutation.
             if generation % 100 < 20:
@@ -357,17 +349,6 @@ class GeneticAlg:
             else:
                 self.mutation_prob = 10
             generation += 1
-        # x = range(1, 201)
-        # plt.plot(x, best_fit, label='best fitness')
-        # plt.plot(x, avg_fit, label='average fitness')
-        # plt.plot(x, worst_fit, label='worst fitness')
-        # plt.title('Fitness scores over the generations')
-        # plt.xlabel('Generation')
-        # plt.ylabel('Fitness')
-        # spread = np.arange(min(worst_fit), max(best_fit) + 1000, 1000)
-        # plt.yticks(spread, labels=spread)
-        # plt.legend()
-        # plt.savefig("darwin2.png")
         self.gui.pause = True
         self.gui.gui_paused()
 
@@ -461,6 +442,7 @@ class LemarkAlg(OptimizingAlg):
 
 
 if __name__ == '__main__':
+
     assert len(sys.argv) == 3, "Incorrect call used when trying to run the program from the command line!"
     alg_type = sys.argv[2]
     if alg_type.lower() == "regular":
@@ -472,5 +454,5 @@ if __name__ == '__main__':
     else:
         print("Wrong algorithm type entered. Exiting program.")
         sys.exit()
-    # ga = DarwinAlg("input.txt")
+
     ga.solve()
